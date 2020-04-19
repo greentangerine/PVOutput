@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # pvoutput_upload.py
 # Pulls Solar and Home use data from your emoncms.org account and squirts the data up to PVOutput
@@ -11,11 +11,7 @@
 # 5 mins is the shortest time period you can send to PVO (in donation mode), otherwise its 15 mins if you don't have a donation PVO account
 # https://forum.pvoutput.org/c/donation-features
 #
-# Based on your longtitude and latitude the script also pulls down current tempearture (from DarkSky) and uses Pysolar to calculate the current sun angle.
-# Use a website like https://www.latlong.net/ to calculate your lon and lat
-#
 # As well as needing Python 3 installed you'll need to install the following modules
-# sudo pip3 install pysolar
 # sudo pip3 install numpy
 # sudo pip3 install pytz
 
@@ -26,7 +22,6 @@ import requests
 import platform
 import sys
 
-from pysolar.solar import *
 from pytz import timezone
 
 ##############################################################
