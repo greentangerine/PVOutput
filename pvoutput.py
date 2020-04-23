@@ -27,9 +27,15 @@ import datetime as dt
 import json
 import requests
 import platform
+
 import sys
+sys.path.insert(0, '/home/pi/PVOutput')
 
 from pytz import timezone
+
+# API keys etc.
+from MyKeys import *
+
 
 def get_emoncms_data(apikey, feed_id, period):
   text_values = ''
@@ -175,24 +181,13 @@ app_log.info('logfile: %s', logFile)
 debug=False
 #debug=True
 
-# PVOutput.org details
-PVO_API='a0cc35b33a79ef4f68c852aeca2c986049aef769'
-# PVOutput system id order needs to match the feed order below ...
-PVO_SYSID=[3642, 18483, 32437]
-
 # EmonCMS.org details
-EMONPI_APIKEY='f8a318181e71fe81fac90776ce9e1dcf'
 FEED_ID_USE=17
 FEED_ID_SOLAR=[4, 2, 3]
 FEED_ID_VOLTS=10
 FEED_ID_TEMP=20
 FEED_ID_IN_TEMP=23
 FEED_ID_HUMIDITY=21
-
-# solcast.com details
-SOLCAST_APIKEY='KnvnQ2oZCuoThWKwxliFxdVe_MHaEr4P'
-SOLCAST_SYSID='653e-7d71-a91b-1596'
-
 
 # How many seconds between data points 
 # (ie, EmonCMS updates every 10 seconds and PVOuput only accepts every 5 mins.... so using 10 seems to catch most of the 29/30 unique values)
