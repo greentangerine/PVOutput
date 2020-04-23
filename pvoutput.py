@@ -1,22 +1,29 @@
 #!/usr/bin/env python3
 
-# pvoutput_upload.py
-# Pulls Solar and Home use data from your emoncms.org account and squirts the data up to PVOutput
+# pvoutput.py
+# Pulls Solar and Home use data from your emoncms.org account and squirts the
+# data up to PVOutput
 #
-# This can run on any internet host running Python3 and you should schedule the script to run every 5 mins
-# You may be able to change to talk to your internal emonpi instance if you don't want it to go external.
+# Also optionally uploads to solcast.com
+#
+# This can run on any internet host running Python3 and you should schedule 
+# the script to run every 5 mins
+# You may be able to change to talk to your internal emonpi instance if you 
+# don't want it to go external.
 #
 # */5 * * * * /usr/bin/python3 /home/PVOutput/pvoutput_upload.py
 #
-# 5 mins is the shortest time period you can send to PVO (in donation mode), otherwise its 15 mins if you don't have a donation PVO account
+# 5 mins is the shortest time period you can send to PVO (in donation mode),
+# otherwise its 15 mins if you don't have a donation PVO account
 # https://forum.pvoutput.org/c/donation-features
 #
-# As well as needing Python 3 installed you'll need to install the following modules
+# As well as needing Python 3 installed you'll need to install the 
+# following modules
 # sudo pip3 install numpy
 # sudo pip3 install pytz
 
 import time
-import datetime
+import datetime as dt
 import json
 import requests
 import platform
@@ -24,88 +31,84 @@ import sys
 
 from pytz import timezone
 
-##############################################################
+def get_emoncms_data(apikey, feed_id, period):
+  text_values = ''
+  payload = {'id': feed_id, 
+             'apikey': apikey, 
+             'start': unix_milli_start, 
+             'end': unix_milli_end, 
+             'interval': period}
 
-def get_emoncms_data(FEED_ID, PERIOD):
-
-  TEXT_VALUES = ''
-  payload = {'id': FEED_ID, 'apikey': EMONPI_APIKEY, 'start': UNIX_MILLI_START, 'end': UNIX_MILLI_END, 'interval': PERIOD}
-
-  if DEBUG ==1:
+  if debug:
     app_log.info(payload)
   header = {'content-type': 'application/json'}
 
   try:
-    response = requests.get("http://emonpi/feed/data.json", params=payload, headers=header)
+    response = requests.get("http://emonpi/feed/data.json", 
+                            params=payload, headers=header)
   except requests.exceptions.RequestException as e:
-    if DEBUG ==1:
-        app_log.error('Feed ID: %s', FEED_ID)
+    if debug:
+        app_log.error('Feed ID: %s', feed_id)
         app_log.error(e)
 
   if response.status_code == 200:
     str_response = response.content.decode("utf-8")
   
-    if DEBUG ==1:
+    if debug:
         app_log.info(str_response)
         app_log.info(response.url)
 
     mylist = json.loads(str_response)
 
-    READING = 0
-    COUNT = 1
-    TOTAL = 0
+    reading = 0
+    count = 1
+    total = 0
 
     for x in mylist: 
-      #print (COUNT,x)
-      READING = (x[1])
-      TOTAL = TOTAL + READING
-      COUNT = COUNT + 1
-      TEXT_VALUES = TEXT_VALUES + (str(int(READING))) + ', '
+      reading = (x[1])
+      total = total + reading
+      count = count + 1
+      text_values = text_values + (str(int(reading))) + ', '
 
-    #print ()
-    COUNT = COUNT - 1
-    #print (COUNT)
-    #print (TOTAL)
-    #OUTPUT = (int(TOTAL/COUNT))
-    #print (OUTPUT)
+    count = count - 1
 
+    if debug:
+      app_log.info('Number of numbers pulled (count): %s', count)
+      app_log.info('Number of numbers (total): %s', total)
 
-    app_log.info('Number of numbers pulled (COUNT): %s', COUNT)
-    app_log.info('Number of numbers (TOTAL): %s', TOTAL)
-
-    if COUNT != 0 or TOTAL != 0:
-      OUTPUT = (int(TOTAL/COUNT))
+    if count != 0 or total != 0:
+      output = (int(total/count))
     else:
-      OUTPUT = 0
+      output = 0
 
   else:
-    OUTPUT = 0
+    output = 0
 
-  return (OUTPUT, TEXT_VALUES)
+  return (output, text_values)
 
-#########################################################################
 
-def post_pvoutput(SYSIDS, GEN, VRMS, USAGE, TEMP, HUMIDITY, INTEMP): # may raise exceptions
+def post_pvoutput(apikey, sysids, gen, vrms, usage, temp, humidity, intemp):
+  # may raise exceptions
   url = 'https://pvoutput.org/service/r2/addstatus.jsp'
 
-  for i in range(len(SYSIDS)):
+  for i in range(len(sysids)):
     headers = {
-      'X-Pvoutput-SystemId': str(SYSIDS[i]),
-      'X-Pvoutput-Apikey': str(PVO_API)
+      'X-Pvoutput-SystemId': str(sysids[i]),
+      'X-Pvoutput-Apikey': str(apikey)
     }
     params = {
-      'd': DATE,
-      't': TIME,
-      'v2': GEN[i],
-      'v5': str(TEMP),
-      'v6': str(VRMS),
-      'v7': str(HUMIDITY),
-      'v8': str(USAGE),
-      'v12':str(INTEMP)
+      'd': date,
+      't': time,
+      'v2': gen[i],
+      'v5': str(temp),
+      'v6': str(vrms),
+      'v7': str(humidity),
+      'v8': str(usage),
+      'v12':str(intemp)
     }
 
     app_log.info('posting data to pvoutput')
-    if DEBUG ==1:
+    if debug:
       app_log.info(headers)
       app_log.info(params)
     resp = requests.post(url, headers=headers, data=params, timeout=10)
@@ -117,9 +120,34 @@ def post_pvoutput(SYSIDS, GEN, VRMS, USAGE, TEMP, HUMIDITY, INTEMP): # may raise
   return
 
 
-##########################################################################
+def post_solcast(sysapi, sysid, gen): # may raise exceptions
+    url = 'https://api.solcast.com.au/rooftop_sites/' + str(sysid) +\
+             '/measurements'
+
+    headers = { 'Authorization': 'Bearer ' + str(sysapi),
+                'Content-Type': 'application/json' }
+
+    paramsStr = { "measurement": 
+                  { "period_end": dt.datetime.utcnow().isoformat() + 'Z',
+                    "period": "PT5M",
+                    "total_power": (gen / 1000)}}
+
+    params = json.dumps(paramsStr)
+
+    app_log.info('posting data to solcast')
+    if debug:
+        app_log.info(headers)
+        app_log.info(params)
+    resp = requests.post(url, headers=headers, data=params, timeout=10)
+    if resp.status_code != 200:
+        app_log.error(resp.status_code)
+        app_log.error('pvoutput returned code %s', resp.status_code)
+        app_log.error(resp.text)
+
+    return
 
 
+# configure logging ...
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -132,24 +160,23 @@ else:
   # Linux absolute path
   logFile = '/home/pi/PVOutput/log.txt'
 
-my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
+my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5*1024*1024, 
+                                 backupCount=2, encoding=None, delay=0)
 my_handler.setFormatter(log_formatter)
 my_handler.setLevel(logging.INFO)
 
 app_log = logging.getLogger('root')
 app_log.setLevel(logging.INFO)
-
 app_log.addHandler(my_handler)
 
-app_log.info('-----------------------------------------------------------------------------------------------------------------------------')
+app_log.info('-------------------------------------------------------------------------------')
 app_log.info('logfile: %s', logFile)
 
-##############################################################################
-
-DEBUG=1
+debug=False
+#debug=True
 
 # PVOutput.org details
-PVO_API='a0cc35b33a79ef4f68c852aeca2c986049aef769' #your PVOutput.org API key
+PVO_API='a0cc35b33a79ef4f68c852aeca2c986049aef769'
 # PVOutput system id order needs to match the feed order below ...
 PVO_SYSID=[3642, 18483, 32437]
 
@@ -162,6 +189,11 @@ FEED_ID_TEMP=20
 FEED_ID_IN_TEMP=23
 FEED_ID_HUMIDITY=21
 
+# solcast.com details
+SOLCAST_APIKEY='KnvnQ2oZCuoThWKwxliFxdVe_MHaEr4P'
+SOLCAST_SYSID='653e-7d71-a91b-1596'
+
+
 # How many seconds between data points 
 # (ie, EmonCMS updates every 10 seconds and PVOuput only accepts every 5 mins.... so using 10 seems to catch most of the 29/30 unique values)
 INTERVAL_TX=10
@@ -169,106 +201,89 @@ INTERVAL_TX=10
 INTERVAL_TH=60
 
 # Time right now in milliseconds
-UNIX_MILLI_END=int(round(time.time() * 1000))
+unix_milli_end = int(round(time.time() * 1000))
 # 5 minutes ago in milliseconds (PVOutput only accepts 5 minute updates)
-UNIX_MILLI_START=((UNIX_MILLI_END-300000))
+unix_milli_start = ((unix_milli_end - 300000))
 # If you need to change this to 15 mins then its 900,000
 
-
 # Date for PVOutput 
-DATE = time.strftime('%Y%m%d')
-TIME = time.strftime('%R')
+date = time.strftime('%Y%m%d')
+time = time.strftime('%R')
 
-#print (UNIX_MILLI_START)
-#print (UNIX_MILLI_END)
 
 # Reset working variables
-SOLAR_GEN = 0
-HOME_USAGE = 0
-RAW_VALUES = ''
-SOLAR = []
-VOLTS = 0
-OUTSIDE_TEMP = 0
-INSIDE_TEMP = 0
-OUTSIDE_HUMIDITY = 0
+solar_gen = 0
+home_usage = 0
+raw_values = ''
+solar = []
+volts = 0
+outside_temp = 0
+inside_temp = 0
+outside_humidity = 0
+total_gen = 0
 
-INTERVAL=INTERVAL_TH
+# Query the TH units ...
+interval = INTERVAL_TH
 
 # Get temperature figure from EmonCMS API
-FEED_ID = FEED_ID_TEMP 
-app_log.info('Getting temperature, feed id: %s', FEED_ID)
-OUTSIDE_TEMP, RAW_VALUES = get_emoncms_data(FEED_ID, INTERVAL)
-if DEBUG ==1:
-    app_log.info('Temperature Raw: %s', RAW_VALUES)
-#print (RAW_VALUES)
+feed_id = FEED_ID_TEMP 
+app_log.info('Getting temperature, feed id: %s', feed_id)
+outside_temp, raw_values = get_emoncms_data(EMONPI_APIKEY, feed_id, interval)
+if debug:
+    app_log.info('Temperature Raw: %s', raw_values)
 
 # Get humidity figure from EmonCMS API
-FEED_ID = FEED_ID_HUMIDITY 
-app_log.info('Getting humidity, feed id: %s', FEED_ID)
-OUTSIDE_HUMIDITY, RAW_VALUES = get_emoncms_data(FEED_ID, INTERVAL)
-if DEBUG ==1:
-    app_log.info('Temperature Raw: %s', RAW_VALUES)
-#print (RAW_VALUES)
+feed_id = FEED_ID_HUMIDITY 
+app_log.info('Getting humidity, feed id: %s', feed_id)
+outside_humidity, raw_values = get_emoncms_data(EMONPI_APIKEY, feed_id, interval)
+if debug:
+    app_log.info('Temperature Raw: %s', raw_values)
 
-INTERVAL=INTERVAL_TX
+# Query the TX units ...
+interval = INTERVAL_TX
 
 # Get voltage figure from EmonCMS API
-FEED_ID = FEED_ID_VOLTS 
-app_log.info('Getting voltage, feed id: %s', FEED_ID)
-VOLTS, RAW_VALUES = get_emoncms_data(FEED_ID, INTERVAL)
-if DEBUG ==1:
-    app_log.info('Voltage Raw: %s', RAW_VALUES)
-#print (RAW_VALUES)
+feed_id = FEED_ID_VOLTS 
+app_log.info('Getting voltage, feed id: %s', feed_id)
+volts, raw_values = get_emoncms_data(EMONPI_APIKEY, feed_id, interval)
+if debug:
+    app_log.info('Voltage Raw: %s', raw_values)
 
 # Get inside temperature figure from EmonCMS API
-FEED_ID = FEED_ID_IN_TEMP
-app_log.info('Getting voltage, feed id: %s', FEED_ID)
-INSIDE_TEMP, RAW_VALUES = get_emoncms_data(FEED_ID, INTERVAL)
-if DEBUG ==1:
-    app_log.info('Inside temperature Raw: %s', RAW_VALUES)
-#print (RAW_VALUES)
+feed_id = FEED_ID_IN_TEMP
+app_log.info('Getting voltage, feed id: %s', feed_id)
+inside_temp, raw_values = get_emoncms_data(EMONPI_APIKEY, feed_id, interval)
+if debug:
+    app_log.info('Inside temperature Raw: %s', raw_values)
 
 # Get Home Usage figure from EmonCMS API
-FEED_ID = FEED_ID_USE 
-app_log.info('Getting Home Use, feed id: %s', FEED_ID)
-HOME_USAGE, RAW_VALUES = get_emoncms_data(FEED_ID, INTERVAL)
-if DEBUG == 1:
-    app_log.info('Home Usage Raw: %s', RAW_VALUES)
-#print (RAW_VALUES)
+feed_id = FEED_ID_USE 
+app_log.info('Getting Home Use, feed id: %s', feed_id)
+home_usage, raw_values = get_emoncms_data(EMONPI_APIKEY, feed_id, interval)
+if debug:
+    app_log.info('Home Usage Raw: %s', raw_values)
 
 # Get Solar Generation figure from EmonCMS API
-for FEED_ID in FEED_ID_SOLAR:
-  app_log.info('Getting Solar Use, feed id: %s', FEED_ID)
-  SOLAR_GEN, RAW_VALUES = get_emoncms_data(FEED_ID, INTERVAL)
-  SOLAR.append(SOLAR_GEN)
-  if DEBUG ==1:
-      app_log.info('Solar Usage Raw: %s', RAW_VALUES)
-  #print (RAW_VALUES)
+for feed_id in FEED_ID_SOLAR:
+  app_log.info('Getting Solar Use, feed id: %s', feed_id)
+  solar_gen, raw_values = get_emoncms_data(EMONPI_APIKEY, feed_id, interval)
+  solar.append(solar_gen)
+  total_gen = total_gen + solar_gen
+  if debug:
+      app_log.info('Solar Usage Raw: %s', raw_values)
 
-#print ()
-#print (DATE)
-#print (TIME)
-#print ()
-#print ('Solar: ',SOLAR)
-#print ('Usage: ',HOME_USAGE)
-#print ('Volts: ',VOLTS)
-#print ('Temp: ',OUTSIDE_TEMP)
-#print ('Temp: ',INSIDE_TEMP)
-#print ('Humidity: ',OUTSIDE_HUMIDITY)
-
-
-app_log.info('Solar W: %s', SOLAR_GEN)
-app_log.info('Usage W: %s', HOME_USAGE)
-app_log.info('Voltage V: %s', VOLTS)
-app_log.info('Outside Temp C: %s', OUTSIDE_TEMP)
-app_log.info('Inside Temp C: %s', INSIDE_TEMP)
-app_log.info('Outside Humidity P: %s', OUTSIDE_HUMIDITY)
+app_log.info('Solar W: %s', total_gen)
+app_log.info('Usage W: %s', home_usage)
+app_log.info('Voltage V: %s', volts)
+app_log.info('Outside Temp C: %s', outside_temp)
+app_log.info('Inside Temp C: %s', inside_temp)
+app_log.info('Outside Humidity P: %s', outside_humidity)
 
 if platform.system() == 'Windows':
   # Windows current directory
   app_log.info('i am on Windows, no uploading')
 else:
   # Punt collected data up to PVPoutput.org
-  post_pvoutput(PVO_SYSID, SOLAR, VOLTS, HOME_USAGE, OUTSIDE_TEMP, OUTSIDE_HUMIDITY, INSIDE_TEMP)
-  #print ('Funchi ...')
+  post_pvoutput(PVO_API, PVO_SYSID, solar, volts, home_usage, outside_temp, outside_humidity, inside_temp)
+  post_solcast(SOLCAST_APIKEY, SOLCAST_SYSID, total_gen)
 
