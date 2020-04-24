@@ -57,55 +57,61 @@ def post_solcast(sysapi, sysid, gen, end_time, period, app_log=None):
 
 
 def get_solcast_forecast(sysapi, sysid, app_log=None):
-    if apikey is None:
+    if sysapi is None:
         return
 
     payload = {'api_key': sysapi, 'format': 'json'}
 
     if debug:
-        app_log.info(payload)
+        if app_log is not None:
+            app_log.info(payload)
 
     url = 'https://api.solcast.com.au/rooftop_sites/' + str(sysid) +\
              '/forecasts'
     try:
         response = requests.get(url, params=payload)
     except requests.exceptions.RequestException as e:
-      if debug:
-          app_log.error(e)
+        if debug:
+            if app_log is not None:
+                app_log.error(e)
 
     if response.status_code == 200:
         str_response = response.content.decode("utf-8")
   
     if debug:
-        app_log.info(str_response)
-        app_log.info(response.url)
+        if app_log is not None:
+            app_log.info(str_response)
+            app_log.info(response.url)
 
     return json.loads(str_response)
 
 
 def get_solcast_estimated_actuals(sysapi, sysid, app_log=None):
-    if apikey is None:
+    if sysapi is None:
         return
 
     payload = {'api_key': sysapi, 'format': 'json'}
 
     if debug:
-        app_log.info(payload)
+        if app_log is not None:
+            app_log.info(payload)
 
     url = 'https://api.solcast.com.au/rooftop_sites/' + str(sysid) +\
              '/estimated_actuals'
     try:
         response = requests.get(url, params=payload)
     except requests.exceptions.RequestException as e:
-      if debug:
-          app_log.error(e)
+        if debug:
+            if app_log is not None:
+                app_log.error(e)
 
     if response.status_code == 200:
         str_response = response.content.decode("utf-8")
   
-    if debug:
-        app_log.info(str_response)
-        app_log.info(response.url)
+    if app_log is not None:
+        if debug:
+            app_log.info(str_response)
+            app_log.info(response.url)
 
     return json.loads(str_response)
 
