@@ -32,12 +32,16 @@ import sys
 sys.path.insert(0, '/home/pi/PVOutput')
 
 from pytz import timezone
+from solcast import post_solcast
 
 # API keys etc.
 from MyKeys import *
 
 
 def get_emoncms_data(apikey, feed_id, period):
+  if apikey is None:
+    return
+
   text_values = ''
   payload = {'id': feed_id, 
              'apikey': apikey, 
@@ -94,6 +98,9 @@ def get_emoncms_data(apikey, feed_id, period):
 
 
 def post_pvoutput(apikey, sysids, gen, vrms, usage, temp, humidity, intemp):
+  if apikey is None:
+    return
+
   # may raise exceptions
   url = 'https://pvoutput.org/service/r2/addstatus.jsp'
 
@@ -124,33 +131,6 @@ def post_pvoutput(apikey, sysids, gen, vrms, usage, temp, humidity, intemp):
       app_log.error(resp.text)
 
   return
-
-
-def post_solcast(sysapi, sysid, gen): # may raise exceptions
-    url = 'https://api.solcast.com.au/rooftop_sites/' + str(sysid) +\
-             '/measurements'
-
-    headers = { 'Authorization': 'Bearer ' + str(sysapi),
-                'Content-Type': 'application/json' }
-
-    paramsStr = { "measurement": 
-                  { "period_end": dt.datetime.utcnow().isoformat() + 'Z',
-                    "period": "PT5M",
-                    "total_power": (gen / 1000)}}
-
-    params = json.dumps(paramsStr)
-
-    app_log.info('posting data to solcast')
-    if debug:
-        app_log.info(headers)
-        app_log.info(params)
-    resp = requests.post(url, headers=headers, data=params, timeout=10)
-    if resp.status_code != 200:
-        app_log.error(resp.status_code)
-        app_log.error('pvoutput returned code %s', resp.status_code)
-        app_log.error(resp.text)
-
-    return
 
 
 # configure logging ...
@@ -279,6 +259,9 @@ if platform.system() == 'Windows':
   app_log.info('i am on Windows, no uploading')
 else:
   # Punt collected data up to PVPoutput.org
-  post_pvoutput(PVO_API, PVO_SYSID, solar, volts, home_usage, outside_temp, outside_humidity, inside_temp)
-  post_solcast(SOLCAST_APIKEY, SOLCAST_SYSID, total_gen)
+  post_pvoutput(PVO_API, PVO_SYSID, solar, volts, home_usage, 
+                outside_temp, outside_humidity, inside_temp)
+  post_solcast(SOLCAST_APIKEY, SOLCAST_SYSID, total_gen,
+               dt.datetime.utcnow().isoformat() + 'Z',
+               'PT5M', app_log)
 
