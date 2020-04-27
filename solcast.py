@@ -7,12 +7,6 @@
 import json
 import requests
 
-import sys
-sys.path.insert(0, '/home/pi/PVOutput')
-
-# API keys etc.
-from MyKeys import *
-
 debug=False
 
 def post_solcast(sysapi, sysid, gen, end_time, period, app_log=None):

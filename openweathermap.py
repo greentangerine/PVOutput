@@ -1,31 +1,30 @@
 #!/usr/bin/env python3
 
-# weatherbit.py
+# openweathermap.py
 
-# read forecast from weatherbit.io
+# read forecast from openweathermap.org
 
 import json
 import requests
 
 debug=False
 
-def get_weatherbit_forecast(sysapi, latitude, longitude, days, app_log=None):
+def get_openweathermap_data(sysapi, latitude, longitude, app_log=None):
     if sysapi is None:
         return
 
-    payload = {'key': sysapi, 
-               'units': 'M',
-               'lang': 'en',
+    payload = {'appid': sysapi, 
                'lat': str(latitude),
                'lon': str(longitude),
-               'days': str(days)
+               'units': 'metric',
+               'lang': 'en'
               }
 
     if debug:
         if app_log is not None:
             app_log.info(payload)
 
-    url = 'https://api.weatherbit.io/v2.0/forecast/daily'
+    url = 'https://api.openweathermap.org/data/2.5/onecall'
 
     try:
         response = requests.get(url, params=payload)
@@ -45,22 +44,23 @@ def get_weatherbit_forecast(sysapi, latitude, longitude, days, app_log=None):
     return json.loads(str_response)
 
 
-def get_weatherbit_current(sysapi, latitude, longitude, app_log=None):
+def get_openweathermap_historic_data(sysapi, latitude, longitude, date, app_log=None):
     if sysapi is None:
         return
 
-    payload = {'key': sysapi, 
-               'units': 'M',
-               'lang': 'en',
+    payload = {'appid': sysapi, 
                'lat': str(latitude),
-               'lon': str(longitude)
+               'lon': str(longitude),
+               'units': 'metric',
+               'lang': 'en',
+               'dt': str(date)
               }
 
     if debug:
         if app_log is not None:
             app_log.info(payload)
 
-    url = 'https://api.weatherbit.io/v2.0/current'
+    url = 'https://api.openweathermap.org/data/2.5/onecall/timemachine'
 
     try:
         response = requests.get(url, params=payload)

@@ -9,10 +9,8 @@ sys.path.insert(0, '/home/pi/PVOutput')
 
 # API keys etc.
 from MyKeys import *
-from weatherbit import get_weatherbit_forecast, get_weatherbit_current
+from weatherbit import *
 
-LAT=50.64828
-LONG=-2.38881
 DAYS=1
 
 result = get_weatherbit_forecast(WEATHERBIT_APIKEY, LAT, LONG, DAYS)
