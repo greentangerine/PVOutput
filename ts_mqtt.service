@@ -1,0 +1,12 @@
+[Service]
+WorkingDirectory=/home/pi/PVOutput
+ExecStart=/home/pi/PVOutput/ts_mqtt.py
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=ts_mqtt
+User=pi
+Group=pi
+Environment=
+[Install]
+WantedBy=multi-user.target
