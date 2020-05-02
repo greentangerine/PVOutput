@@ -84,7 +84,6 @@ def do_control():
         else:
             ret = client.publish(RELAY2, R_OFF)
     else:
-        print("else!")
         # ts1 < threshold
         # ensure ts2 is off ...
         ret = client.publish(RELAY2, R_OFF)
