@@ -32,6 +32,7 @@ def on_connect(client, userdata, flags, rc):
         ret = client.publish(RELAY1, R_OFF)
         ret = client.publish(RELAY2, R_OFF)
 
+
 def on_message(client, userdata, message):
     mesg = message.payload.decode()
     print(mesg)
@@ -47,13 +48,15 @@ def on_publish(client, userdata, mid):
 
 
 def ts1_callback(client, userdata, message):
-    ts1_temp = message.payload.decode()
+    global ts1_temp
+    ts1_temp = float(message.payload.decode())
     #print("TS1 temp =", ts1_temp)
     do_control()
 
 
 def ts2_callback(client, userdata, message):
-    ts2_temp = message.payload.decode()
+    global ts2_temp
+    ts2_temp = float(message.payload.decode())
     #print("TS2 temp =", ts2_temp)
     do_control()
 
@@ -69,6 +72,9 @@ def relay2_callback(client, userdata, message):
 
 
 def do_control():
+    global ts1_temp
+    global ts2_temp
+    print("do_control: ts1 temp = ", ts1_temp, "ts2 temp = ", ts2_temp)
     if ts1_temp >= TS1_MAXTEMP:
         # always switch off
         ret = client.publish(RELAY1, R_OFF)
@@ -78,10 +84,12 @@ def do_control():
         else:
             ret = client.publish(RELAY2, R_OFF)
     else:
+        print("else!")
         # ts1 < threshold
         # ensure ts2 is off ...
         ret = client.publish(RELAY2, R_OFF)
-        ret = client.publish(RELAY1, R_ON)
+        if ts1_temp < TS1_MAXTEMP:
+            ret = client.publish(RELAY1, R_ON)
 
 
 # main code ...
