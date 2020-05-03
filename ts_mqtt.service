@@ -1,7 +1,13 @@
+[Unit]
+Description=MQTT control of immersion heaters
+Wants=mosquitto.service
+After=mosquitto.service
+Documentation=https://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md
 [Service]
 WorkingDirectory=/home/pi/PVOutput
 ExecStart=/home/pi/PVOutput/ts_mqtt.py
 Restart=always
+RestartSec=60
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=ts_mqtt
