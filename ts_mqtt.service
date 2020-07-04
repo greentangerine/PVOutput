@@ -1,18 +1,26 @@
 [Unit]
 Description=MQTT control of immersion heaters
-Wants=mosquitto.service
-After=mosquitto.service
+Wants=emoncms_mqtt.service emonhub.service
+After=emoncms_mqtt.service emonhub.service
 Documentation=https://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md
+
 [Service]
 WorkingDirectory=/home/pi/PVOutput
-ExecStart=/home/pi/PVOutput/ts_mqtt.py
+ExecStart=/usr/bin/python3 /home/pi/PVOutput/ts_mqtt.py
 Restart=always
 RestartSec=60
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=file:/var/log/ts_mqtt/ts_mqtt.log
+StandardError=file:/var/log/ts_mqtt/ts_mqtt.log
 SyslogIdentifier=ts_mqtt
-User=pi
-Group=pi
-Environment=
+#User=pi
+#Group=pi
+Environment='USER=pi'
+Environment='LOG_PATH=/var/log/ts_mqtt'
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p ${LOG_PATH}
+ExecStartPre=/bin/chown ${USER} ${LOG_PATH}
+ExecStartPre=/bin/touch ${LOG_PATH}/ts_mqtt.log
+ExecStartPre=/bin/chmod 666 ${LOG_PATH}/ts_mqtt.log
+
 [Install]
 WantedBy=multi-user.target

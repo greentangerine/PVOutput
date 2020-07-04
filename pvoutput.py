@@ -144,7 +144,7 @@ if platform.system() == 'Windows':
   logFile = 'log.txt'
 else:
   # Linux absolute path
-  logFile = '/home/pi/PVOutput/log.txt'
+  logFile = '/tmp/PVOutput.log'
 
 my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5*1024*1024, 
                                  backupCount=2, encoding=None, delay=0)
