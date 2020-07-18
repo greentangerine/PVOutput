@@ -80,15 +80,18 @@ def do_control():
     if ts1_temp >= TS1_MAXTEMP:
         # always switch off
         ret = client.publish(RELAY1, R_OFF)
+        time.sleep(30)
     
         if ts2_temp < TS2_MAXTEMP:
             ret = client.publish(RELAY2, R_ON)
         else:
+            # ensure off
             ret = client.publish(RELAY2, R_OFF)
     else:
         # ts1 < threshold
         # ensure ts2 is off ...
         ret = client.publish(RELAY2, R_OFF)
+        time.sleep(30)
         ret = client.publish(RELAY1, R_ON)
 
 
