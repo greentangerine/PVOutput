@@ -18,6 +18,7 @@ RELAY1 = 'emon/immersion/thermal_store'
 RELAY2 = 'emon/immersion/buffer_store'
 R_ON = '1'
 R_OFF = '0'
+QOS = 2
 
 
 def on_connect(client, userdata, flags, rc):
@@ -29,8 +30,8 @@ def on_connect(client, userdata, flags, rc):
             print("Subscribe failed")
 
         # ensure both thermostats are initially off ...
-        ret = client.publish(RELAY1, R_OFF)
-        ret = client.publish(RELAY2, R_OFF)
+        ret = client.publish(RELAY1, R_OFF, QOS)
+        ret = client.publish(RELAY2, R_OFF, QOS)
 
 
 def on_message(client, userdata, message):
@@ -78,21 +79,18 @@ def do_control():
     global ts2_temp
     #print("do_control: ts1 temp = ", ts1_temp, "ts2 temp = ", ts2_temp)
     if ts1_temp >= TS1_MAXTEMP:
-        # always switch off
-        ret = client.publish(RELAY1, R_OFF)
-        time.sleep(30)
+        # always switch off both
+        ret = client.publish(RELAY1, R_OFF, QOS)
+        ret = client.publish(RELAY2, R_OFF, QOS)
     
         if ts2_temp < TS2_MAXTEMP:
-            ret = client.publish(RELAY2, R_ON)
-        else:
-            # ensure off
-            ret = client.publish(RELAY2, R_OFF)
+            ret = client.publish(RELAY2, R_ON, QOS)
     else:
         # ts1 < threshold
-        # ensure ts2 is off ...
-        ret = client.publish(RELAY2, R_OFF)
-        time.sleep(30)
-        ret = client.publish(RELAY1, R_ON)
+        # ensure both off ...
+        ret = client.publish(RELAY1, R_OFF, QOS)
+        ret = client.publish(RELAY2, R_OFF, QOS)
+        ret = client.publish(RELAY1, R_ON, QOS)
 
 
 # main code ...
