@@ -79,16 +79,16 @@ def do_control():
     global ts2_temp
     #print("do_control: ts1 temp = ", ts1_temp, "ts2 temp = ", ts2_temp)
     if ts1_temp >= TS1_MAXTEMP:
-        # always switch off both
+        # ensure R1 is off ...
         ret = client.publish(RELAY1, R_OFF, QOS)
-        ret = client.publish(RELAY2, R_OFF, QOS)
     
         if ts2_temp < TS2_MAXTEMP:
             ret = client.publish(RELAY2, R_ON, QOS)
+        else:
+            ret = client.publish(RELAY2, R_OFF, QOS)
     else:
         # ts1 < threshold
-        # ensure both off ...
-        ret = client.publish(RELAY1, R_OFF, QOS)
+        # ensure R2 off ...
         ret = client.publish(RELAY2, R_OFF, QOS)
         ret = client.publish(RELAY1, R_ON, QOS)
 
