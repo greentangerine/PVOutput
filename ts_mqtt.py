@@ -14,8 +14,8 @@ TS_1 = 'thermal_store/ts1'
 TS_2 = 'thermal_store/ts2'
 
 # topics and values for relay control
-RELAY1 = 'emon/immersion/thermal_store'
-RELAY2 = 'emon/immersion/buffer_store'
+RELAY1 = 'emon/thermal_store/control/1'
+RELAY2 = 'emon/buffer_store/control/1'
 R_ON = '1'
 R_OFF = '0'
 QOS = 2
@@ -79,7 +79,7 @@ def do_control():
     global ts2_temp
     #print("do_control: ts1 temp = ", ts1_temp, "ts2 temp = ", ts2_temp)
     if ts1_temp >= TS1_MAXTEMP:
-        # ensure R1 is off ...
+        # always switch off
         ret = client.publish(RELAY1, R_OFF, QOS)
     
         if ts2_temp < TS2_MAXTEMP:
@@ -88,7 +88,7 @@ def do_control():
             ret = client.publish(RELAY2, R_OFF, QOS)
     else:
         # ts1 < threshold
-        # ensure R2 off ...
+        # ensure ts2 is off ...
         ret = client.publish(RELAY2, R_OFF, QOS)
         ret = client.publish(RELAY1, R_ON, QOS)
 
