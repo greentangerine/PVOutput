@@ -45,6 +45,7 @@ def get_emoncms_data(apikey, feed_id, period):
   text_values = ''
   payload = {'id': feed_id, 
              'apikey': apikey, 
+             'skipmissing': 1,
              'start': unix_milli_start, 
              'end': unix_milli_end, 
              'interval': period}
@@ -76,7 +77,7 @@ def get_emoncms_data(apikey, feed_id, period):
 
     for x in mylist: 
       reading = (x[1])
-      total = total + reading
+      total = total + int(reading)
       count = count + 1
       text_values = text_values + (str(int(reading))) + ', '
 
