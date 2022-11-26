@@ -69,6 +69,7 @@ def get_emoncms_data(apikey, feed_id, period):
         app_log.info(str_response)
         app_log.info(response.url)
 
+    print(str_response)
     mylist = json.loads(str_response)
 
     reading = 0
@@ -167,7 +168,7 @@ FEED_ID_USE=17
 FEED_ID_SOLAR=[4, 2, 3]
 FEED_ID_VOLTS=10
 FEED_ID_TEMP=20
-FEED_ID_IN_TEMP=23
+FEED_ID_IN_TEMP=24
 FEED_ID_HUMIDITY=21
 
 # How many seconds between data points 
@@ -227,7 +228,7 @@ if debug:
 
 # Get inside temperature figure from EmonCMS API
 feed_id = FEED_ID_IN_TEMP
-app_log.info('Getting voltage, feed id: %s', feed_id)
+app_log.info('Getting inside temp, feed id: %s', feed_id)
 inside_temp, raw_values = get_emoncms_data(EMONPI_APIKEY, feed_id, interval)
 if debug:
     app_log.info('Inside temperature Raw: %s', raw_values)
