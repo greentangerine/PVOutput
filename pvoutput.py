@@ -69,7 +69,7 @@ def get_emoncms_data(apikey, feed_id, period):
         app_log.info(str_response)
         app_log.info(response.url)
 
-    print(str_response)
+    #print(str_response)
     mylist = json.loads(str_response)
 
     reading = 0
@@ -166,7 +166,7 @@ debug=False
 # EmonCMS.org details
 FEED_ID_USE=17
 FEED_ID_SOLAR=[4, 2, 3]
-FEED_ID_VOLTS=10
+FEED_ID_VOLTS=135
 FEED_ID_TEMP=20
 FEED_ID_IN_TEMP=24
 FEED_ID_HUMIDITY=21
